@@ -43,7 +43,7 @@ namespace ruttmann.vita.api
 
     private void LoadOnDemand()
     {
-      if (this.database != null)
+      if (this.database != null && Environment.OSVersion.Platform != PlatformID.Win32NT)
       {
         return;
       }
