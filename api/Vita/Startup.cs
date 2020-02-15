@@ -28,6 +28,7 @@ namespace ruttmann.vita.api
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
             services.AddSingleton(typeof(IVitaDataService), typeof(VitaDataService));
             services.AddSingleton(typeof(IAuthService), typeof(VitaAuthService));
+            services.AddSingleton(typeof(ITrackingService), typeof(TrackingService));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
