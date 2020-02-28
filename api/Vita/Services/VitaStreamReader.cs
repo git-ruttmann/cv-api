@@ -17,6 +17,8 @@ namespace ruttmann.vita.api
     private VitaEntryBuilder builder = null;
 
     private String globalCode = String.Empty;
+    
+    private VitaEntry[] includedItems;
 
     public VitaStreamReader(Stream stream, Encoding encoding)
     {
@@ -42,6 +44,15 @@ namespace ruttmann.vita.api
             }
 
             this.BeginSection(line);
+            if (this.includedItems != null)
+            {
+              foreach(var includedItem in includedItems)
+              {
+                yield return includedItem;
+              }
+
+              this.includedItems = null;
+            }
           }
           else if (builder == null)
           {
@@ -104,6 +115,16 @@ namespace ruttmann.vita.api
       if (tokens.Length != 2)
       {
         throw new InvalidDataException($"missing title in line: {line}");
+      }
+
+      if ((VitaEntryType)vitaEntryType == VitaEntryType.Include)
+      {
+        var currentFileName = (this.stream as FileStream)?.Name;
+        var fileItem = Path.Join(Path.GetDirectoryName(currentFileName), tokens[1].Trim().Trim('"'));
+        var stream = new FileStream(fileItem, FileMode.Open, FileAccess.Read);
+        var reader = new VitaStreamReader(stream, Encoding.UTF8);
+        this.includedItems = reader.ReadEntries().ToArray();
+        return;
       }
 
       this.builder = new VitaEntryBuilder((VitaEntryType)vitaEntryType, tokens[1].Trim());

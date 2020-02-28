@@ -17,6 +17,8 @@ namespace ruttmann.vita.api
     Project,
 
     Introduction,
+
+    Include,
   };
 
   [Flags]
