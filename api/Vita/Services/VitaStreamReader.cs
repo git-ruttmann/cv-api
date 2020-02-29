@@ -16,7 +16,9 @@ namespace ruttmann.vita.api
 
     private VitaEntryBuilder builder = null;
 
-    private String globalCode = String.Empty;
+    private String globalCode;
+
+    private VitaEntryAttribute globalAttributes;
     
     private VitaEntry[] includedItems;
 
@@ -26,6 +28,7 @@ namespace ruttmann.vita.api
       this.stream = stream;
       this.globalCode = "*";
       this.inHeaderSection = false;
+      this.globalAttributes = VitaEntryAttribute.LanguageMask | VitaEntryAttribute.DurationMask;
     }
 
     public IEnumerable<VitaEntry> ReadEntries()
@@ -40,7 +43,7 @@ namespace ruttmann.vita.api
           {
             if (this.CloseSectionAndValidate())
             {
-              yield return this.builder.BuildEntry();
+              yield return this.builder.BuildEntry(globalAttributes);
             }
 
             this.BeginSection(line);
@@ -64,6 +67,18 @@ namespace ruttmann.vita.api
             {
               this.globalCode = line.Split(':', 2)[1].Trim();
             }
+            else if (line.StartsWith("#attributes:"))
+            {
+              this.globalAttributes = ParseAttributes(line.Split(':', 2)[1].Trim());
+              if ((this.globalAttributes & VitaEntryAttribute.LanguageMask) == 0)
+              {
+                this.globalAttributes = VitaEntryAttribute.LanguageMask;
+              }
+              if ((this.globalAttributes & VitaEntryAttribute.DurationMask) == 0)
+              {
+                this.globalAttributes = VitaEntryAttribute.DurationMask;
+              }
+            }
             else
             {
               throw new InvalidDataException("file must start with ##<vita entry type>");
@@ -82,7 +97,7 @@ namespace ruttmann.vita.api
 
         if (this.CloseSectionAndValidate())
         {
-          yield return this.builder.BuildEntry();
+          yield return this.builder.BuildEntry(globalAttributes);
         }
       }
     }
@@ -95,12 +110,30 @@ namespace ruttmann.vita.api
       }
       else if (line.StartsWith("#attributes:"))
       {
-        builder.SetAttributes(line.Split(':', 2)[1].Trim());
+        builder.SetAttributes(ParseAttributes(line.Split(':', 2)[1].Trim()));
       }
       else
       {
         throw new InvalidDataException("bad code: {line}");
       }
+    }
+
+    static private VitaEntryAttribute ParseAttributes(string attributes)
+    {
+      return attributes
+          .Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+          .Select(x => x.Trim())
+          .Select(x =>
+          {
+            object vitaEntryAttribute;
+            if (!Enum.TryParse(typeof(VitaEntryAttribute), x, true, out vitaEntryAttribute))
+            {
+              throw new InvalidDataException($"unknown attribute: '{x}'");
+            }
+
+            return (VitaEntryAttribute)vitaEntryAttribute;
+          })
+          .Aggregate(VitaEntryAttribute.None, (x, y) => x | y);
     }
 
     private void BeginSection(string line)
@@ -167,16 +200,16 @@ namespace ruttmann.vita.api
 
       public string Code { get; private set; }
 
-      public VitaEntry BuildEntry()
+      public VitaEntry BuildEntry(VitaEntryAttribute globalAttributes)
       {
         if ((this.Attributes & VitaEntryAttribute.LanguageMask) == VitaEntryAttribute.None)
         {
-          this.Attributes |= VitaEntryAttribute.LanguageMask;
+          this.Attributes |= globalAttributes & VitaEntryAttribute.LanguageMask;
         }
 
         if ((this.Attributes & VitaEntryAttribute.DurationMask) == VitaEntryAttribute.None)
         {
-          this.Attributes |= VitaEntryAttribute.DurationMask;
+          this.Attributes |= globalAttributes & VitaEntryAttribute.DurationMask;
         }
 
         if (String.IsNullOrEmpty(this.Code))
@@ -187,22 +220,9 @@ namespace ruttmann.vita.api
         return new VitaEntry(this.Title, this.Lines.ToArray(), this.VitaEntryType, this.Attributes, this.Code);
       }
 
-      public void SetAttributes(String attributes)
+      public void SetAttributes(VitaEntryAttribute attributes)
       {
-        this.Attributes |= attributes
-          .Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
-          .Select(x => x.Trim())
-          .Select(x =>
-          {
-            object vitaEntryAttribute;
-            if (!Enum.TryParse(typeof(VitaEntryAttribute), x, true, out vitaEntryAttribute))
-            {
-              throw new InvalidDataException($"unknown attribute: '{x}'");
-            }
-
-            return (VitaEntryAttribute)vitaEntryAttribute;
-          })
-          .Aggregate(VitaEntryAttribute.None, (x, y) => x | y);
+        this.Attributes |= attributes;
       }
 
       public void SetCode(string code)
