@@ -31,7 +31,21 @@ namespace ruttmann.vita.api
   {
     public void RecordEvent(TrackingEvent trackingEvent)
     {
-      const String filePath = @"C:\Users\Ruttmann\Documents\track.txt";
+      String filePath;
+      if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+      {
+        filePath = "/var/log/vita.track";
+      }
+      else
+      {
+        filePath = @"C:\Users\Ruttmann\Documents\track.txt";
+      }
+
+      if (!File.Exists(filePath))
+      {
+        return;
+      }
+      
       var lineText = DateTime.Now.ToString() + $" ({trackingEvent.Code}/{trackingEvent.Ip}): {trackingEvent.Url} {trackingEvent.Topic} {trackingEvent.Scroll}";
 
       try
