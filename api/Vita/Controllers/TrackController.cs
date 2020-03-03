@@ -20,11 +20,19 @@
     public IActionResult Post([FromBody]TrackRequest value)
 		{
 			var trackingService = this.HttpContext.RequestServices.GetRequiredService<ITrackingService>();
+
+			var remoteIp = this.HttpContext.Connection.RemoteIpAddress.ToString();
+			if (this.HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var proxyIp))
+			{
+				remoteIp = proxyIp[0];
+			}
+
 			var trackEvent = new TrackingEvent(
 				this.HttpContext.Request.Headers["Code"].Single(),
-				this.HttpContext.Connection.RemoteIpAddress.ToString(),
+				remoteIp,
 				value.Url,
 				value.Topic,
+				value.Duration,
 				value.Scroll);
 			trackingService.RecordEvent(trackEvent);
 			return StatusCode(200);
@@ -39,5 +47,6 @@
 		public String Url { get; set; }
 		public String Topic { get; set; }
 		public Double Scroll { get; set; }
+		public String Duration { get; set; }
   }
 }

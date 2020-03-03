@@ -11,12 +11,13 @@ namespace ruttmann.vita.api
 
   public class TrackingEvent
   {
-    public TrackingEvent(String code, String ip, String url, String topic, double scroll)
+    public TrackingEvent(String code, String ip, String url, String topic, String duration, double scroll)
     {
       Code = code;
       Ip = ip;
       Url = url;
       Topic = topic;
+      Duration = duration;
       Scroll = scroll;
     }
 
@@ -24,6 +25,7 @@ namespace ruttmann.vita.api
     public string Ip { get; }
     public string Url { get; }
     public string Topic { get; }
+    public string Duration { get; }
     public double Scroll { get; }
   }
 
@@ -46,8 +48,8 @@ namespace ruttmann.vita.api
         return;
       }
       
-      var lineText = DateTime.Now.ToString() + $" ({trackingEvent.Code}/{trackingEvent.Ip}): {trackingEvent.Url} {trackingEvent.Topic} {trackingEvent.Scroll}";
-
+      var lineText = DateTime.Now.ToString() + $" ({trackingEvent.Code}/{trackingEvent.Ip}): {trackingEvent.Url} {trackingEvent.Topic}/{trackingEvent.Duration} {trackingEvent.Scroll}";
+  
       try
       {
         using (StreamWriter w = File.AppendText(filePath))
