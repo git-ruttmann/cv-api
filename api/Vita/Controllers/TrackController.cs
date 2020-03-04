@@ -17,36 +17,75 @@
 		/// <returns>a vita collection</returns>
     [HttpPost]
 		[Authorize]
-    public IActionResult Post([FromBody]TrackRequest value)
+    public IActionResult Post([FromBody]UrlTrackRequest value)
+    {
+      var trackingService = this.HttpContext.RequestServices.GetRequiredService<ITrackingService>();
+      string remoteIp = GetRemoteIp();
+
+      var session = trackingService.GetSession(
+        this.HttpContext.Request.Headers["Code"].Single(),
+        this.HttpContext.Request.Headers["SessionKey"].Single(),
+        GetRemoteIp());
+
+      var trackEvent = new UrlTrackingEvent(value.Url, value.Duration);
+      session.RecordUrl(trackEvent);
+
+      return StatusCode(200);
+    }
+
+    /// <summary>
+    /// Get the collection of vita entries for the active code.
+    /// </summary>
+    /// <returns>a vita collection</returns>
+    [HttpPost("topics")]
+		[Authorize]
+    public IActionResult PostTopics([FromBody]TrackTopicsRequest value)
 		{
 			var trackingService = this.HttpContext.RequestServices.GetRequiredService<ITrackingService>();
+      var session = trackingService.GetSession(
+        this.HttpContext.Request.Headers["Code"].Single(),
+        this.HttpContext.Request.Headers["SessionKey"].Single(),
+        GetRemoteIp());
 
-			var remoteIp = this.HttpContext.Connection.RemoteIpAddress.ToString();
-			if (this.HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var proxyIp))
-			{
-				remoteIp = proxyIp[0];
-			}
-
-			var trackEvent = new TrackingEvent(
-				this.HttpContext.Request.Headers["Code"].Single(),
-				remoteIp,
+			var remoteIp = this.GetRemoteIp();
+			var trackEvent = new TrackTopicsEvent(
 				value.Url,
-				value.Topic,
 				value.Duration,
-				value.Scroll);
-			trackingService.RecordEvent(trackEvent);
+				value.Topics);
+
+      session.RecordTopics(trackEvent);
+
 			return StatusCode(200);
 		}
+
+    private string GetRemoteIp()
+    {
+      var remoteIp = this.HttpContext.Connection.RemoteIpAddress.ToString();
+      if (this.HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var proxyIp))
+      {
+        remoteIp = proxyIp[0];
+      }
+
+      return remoteIp;
+    }
 	}
 
   /// <summary>
-  /// this 'login' form POST data
+  /// old track request
   /// </summary>
-  public class TrackRequest
+  public class UrlTrackRequest
   {
 		public String Url { get; set; }
-		public String Topic { get; set; }
-		public Double Scroll { get; set; }
 		public String Duration { get; set; }
+  }
+
+  /// <summary>
+  /// track request for multiple tracked topics
+  /// </summary>
+  public class TrackTopicsRequest
+  {
+		public String Url { get; set; }
+		public String Duration { get; set; }
+		public TrackTopic[] Topics { get; set; }
   }
 }

@@ -1,3 +1,6 @@
+using System.Runtime.CompilerServices;
+[assembly: InternalsVisibleTo("Vita.Test")]
+
 namespace ruttmann.vita.api
 {
   using System;
@@ -17,18 +20,18 @@ namespace ruttmann.vita.api
     }
 
     /// <inheritdoc/>
-    public bool IsValidCode(string requestedCode, out string sessionCookie)
+    public bool IsValidCode(string requestedCode, out IAuthenticatedSession session)
     {
       if (this.dataService.IsValidCode(requestedCode))
       {
         var accessToken = new ValidCodeAccess(requestedCode);
         this.cookieToCode[accessToken.Cookie] = accessToken;
 
-        sessionCookie = accessToken.Cookie;
+        session = accessToken;
         return true;
       }
 
-      sessionCookie = string.Empty;
+      session = null;
       return false;
     }
 
@@ -38,29 +41,29 @@ namespace ruttmann.vita.api
     /// <param name="cookie">the cookie of the request</param>
     /// <param name="code">the code for the cookie</param>
     /// <returns>true if the cookie was valid and the code is </returns>
-    public bool IsValidCookie(string cookie, out string code)
+    public bool IsValidCookie(string cookie, out IAuthenticatedSession session)
     {
       if (!this.cookieToCode.TryGetValue(cookie, out var accessToken))
       {
-        code = String.Empty;
+        session = null;
         return false;
       }
 
       if (DateTime.UtcNow - accessToken.ValidationTime > TimeSpan.FromHours(2))
       {
         this.cookieToCode.Remove(cookie);
-        code = String.Empty;
+        session = null;
         return false;
       }
 
-      code = accessToken.Code;
+      session = accessToken;
       return true;
     }
 
     /// <summary>
     /// class to store valid access items.
     /// </summary>
-    private class ValidCodeAccess
+    private class ValidCodeAccess : IAuthenticatedSession
     {
       private const Int32 CookieLength = 32;
 
@@ -68,12 +71,17 @@ namespace ruttmann.vita.api
       {
         this.Code = code;
         this.Cookie = GenerateRandomCookie();
+        this.Key = Guid.NewGuid().ToString();
         this.ValidationTime = DateTime.UtcNow;
       }
 
       public string Code { get; }
+
       public string Cookie { get; }
+
       public DateTime ValidationTime { get; }
+
+      public string Key { get; }
 
       private String GenerateRandomCookie()
       {
