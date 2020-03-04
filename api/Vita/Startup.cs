@@ -29,6 +29,7 @@ namespace ruttmann.vita.api
             services.AddSingleton(typeof(IVitaDataService), typeof(VitaDataService));
             services.AddSingleton(typeof(IAuthService), typeof(VitaAuthService));
             services.AddSingleton(typeof(ITrackingService), typeof(TrackingService));
+            services.AddSingleton(typeof(ITrackingReportMailer), typeof(TrackingReportMailer));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -40,6 +41,9 @@ namespace ruttmann.vita.api
             }
             
             app.UseMvc();
+
+            // force the singleton to exist.
+            app.ApplicationServices.GetService<ITrackingReportMailer>();
         }
     }
 }

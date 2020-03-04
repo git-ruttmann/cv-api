@@ -31,13 +31,14 @@ namespace ruttmann.vita.api
       }
 
       var authService = context.HttpContext.RequestServices.GetRequiredService<IAuthService>();
-      if (!authService.IsValidCookie(authCookie, out var code))
+      if (!authService.IsValidCookie(authCookie, out var session))
       {
         context.Result = new UnauthorizedResult();
         return;
       }
 
-      context.HttpContext.Request.Headers.Add("Code", new StringValues(code));
+      context.HttpContext.Request.Headers.Add("Code", new StringValues(session.Code));
+      context.HttpContext.Request.Headers.Add("SessionKey", new StringValues(session.Key));
       await next();
     }
   }

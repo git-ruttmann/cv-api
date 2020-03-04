@@ -33,7 +33,7 @@ namespace ruttmann.vita.api.Controllers
     {
       var authService = this.HttpContext.RequestServices.GetRequiredService<IAuthService>();
 
-      if (authService.IsValidCode(value.LoginCode, out var sessionCookie))
+      if (authService.IsValidCode(value.LoginCode, out var session))
       {
         this.Response.StatusCode = 200;
 
@@ -46,7 +46,7 @@ namespace ruttmann.vita.api.Controllers
           SameSite = allowHacks ? SameSiteMode.None : SameSiteMode.Strict,
         };
 
-        this.Response.Cookies.Append(AuthCookieHeaderName, sessionCookie, cookieOptions);
+        this.Response.Cookies.Append(AuthCookieHeaderName, session.Cookie, cookieOptions);
         return;
       }
 

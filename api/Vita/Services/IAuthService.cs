@@ -1,7 +1,16 @@
 namespace ruttmann.vita.api
 {
   using System;
-  using System.Collections.Generic;
+
+  /// <summary>
+  /// Information about an authenticated session
+  /// </summary>
+  public interface IAuthenticatedSession
+  {
+    String Code { get; }
+    String Key { get; }
+    String Cookie { get; }
+  }
 
   public interface IAuthService
   {
@@ -9,16 +18,16 @@ namespace ruttmann.vita.api
     /// Verify if the cookie is valid and get the code for that cookie
     /// </summary>
     /// <param name="cookie">the cookie</param>
-    /// <param name="code">the code of the cookie</param>
+    /// <param name="session">the session information</param>
     /// <returns>true if the cookie is valid</returns>
-    Boolean IsValidCookie(string cookie, out string code);
+    Boolean IsValidCookie(string cookie, out IAuthenticatedSession session);
 
     /// <summary>
     /// Verifies if the code is valid.
     /// </summary>
     /// <param name="requestedCode">the code</param>
-    /// <param name="sessionCookie">the session cookie if the code is valid</param>
+    /// <param name="session">the session information if the code is valid</param>
     /// <returns>true if the code is valid</returns>
-    bool IsValidCode(string requestedCode, out string sessionCookie);
+    Boolean IsValidCode(string requestedCode, out IAuthenticatedSession session);
   }
 }
