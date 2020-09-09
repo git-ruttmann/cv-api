@@ -76,7 +76,7 @@ namespace Vita.Test
         public void LoadDataFile()
         {
             var stream = new FileStream("/home/ruttmann/cvData/generalContent", FileMode.Open);
-            var reader = new VitaStreamReader(stream, Encoding.UTF8);
+            var reader = new VitaStreamReader(new DiskFileSystem(), stream, Encoding.UTF8);
             var items = reader.ReadEntries().ToArray();
             Assert.IsTrue(items.Length > 5);
             Assert.IsTrue(items.All(x => x.Codes.Any()));

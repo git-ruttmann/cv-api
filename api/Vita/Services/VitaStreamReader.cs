@@ -8,6 +8,8 @@ namespace ruttmann.vita.api
 
   public class VitaStreamReader
   {
+    private readonly IFileSystem fileSystem;
+
     private readonly Stream stream;
 
     private readonly Encoding encoding;
@@ -22,9 +24,10 @@ namespace ruttmann.vita.api
     
     private VitaEntry[] includedItems;
 
-    public VitaStreamReader(Stream stream, Encoding encoding)
+    public VitaStreamReader(IFileSystem fileSystem, Stream stream, Encoding encoding)
     {
       this.encoding = encoding;
+      this.fileSystem = fileSystem;
       this.stream = stream;
       this.globalCode = "*";
       this.inHeaderSection = false;
@@ -152,10 +155,9 @@ namespace ruttmann.vita.api
 
       if ((VitaEntryType)vitaEntryType == VitaEntryType.Include)
       {
-        var currentFileName = (this.stream as FileStream)?.Name;
-        var fileItem = Path.Join(Path.GetDirectoryName(currentFileName), tokens[1].Trim().Trim('"'));
-        var stream = new FileStream(fileItem, FileMode.Open, FileAccess.Read);
-        var reader = new VitaStreamReader(stream, Encoding.UTF8);
+        var includedFilename = tokens[1].Trim().Trim('"');
+        var includedStream = this.fileSystem.GetIncludedFile(this.stream, includedFilename);
+        var reader = new VitaStreamReader(this.fileSystem, includedStream, Encoding.UTF8);
         this.includedItems = reader.ReadEntries().ToArray();
         return;
       }
