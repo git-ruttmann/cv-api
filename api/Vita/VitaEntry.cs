@@ -49,10 +49,9 @@ namespace ruttmann.vita.api
       this.Lines = lines;
       this.VitaEntryType = vitaEntryType;
       Attributes = attributes;
-      var set = codes.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+      this.Codes = codes.Split(' ', StringSplitOptions.RemoveEmptyEntries)
         .Select(x => x.Trim())
         .ToHashSet();
-      this.Codes = set.Contains("*") ? new HashSet<String>() { "*" } : set;
     }
 
     public string Title { get; }

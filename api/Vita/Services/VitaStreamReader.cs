@@ -29,7 +29,7 @@ namespace ruttmann.vita.api
       this.encoding = encoding;
       this.fileSystem = fileSystem;
       this.stream = stream;
-      this.globalCode = "*";
+      this.globalCode = string.Empty;
       this.inHeaderSection = false;
       this.globalAttributes = VitaEntryAttribute.LanguageMask | VitaEntryAttribute.DurationMask;
     }
@@ -75,11 +75,11 @@ namespace ruttmann.vita.api
               this.globalAttributes = ParseAttributes(line.Split(':', 2)[1].Trim());
               if ((this.globalAttributes & VitaEntryAttribute.LanguageMask) == 0)
               {
-                this.globalAttributes = VitaEntryAttribute.LanguageMask;
+                this.globalAttributes |= VitaEntryAttribute.LanguageMask;
               }
               if ((this.globalAttributes & VitaEntryAttribute.DurationMask) == 0)
               {
-                this.globalAttributes = VitaEntryAttribute.DurationMask;
+                this.globalAttributes |= VitaEntryAttribute.DurationMask;
               }
             }
             else
@@ -170,11 +170,7 @@ namespace ruttmann.vita.api
     {
       if (builder != null)
       {
-        if (String.IsNullOrEmpty(builder.Code))
-        {
-          builder.SetCode(this.globalCode);
-        }
-
+        builder.SetDefaultCode(this.globalCode);
         return true;
       }
 
@@ -214,11 +210,6 @@ namespace ruttmann.vita.api
           this.Attributes |= globalAttributes & VitaEntryAttribute.DurationMask;
         }
 
-        if (String.IsNullOrEmpty(this.Code))
-        {
-          this.Code = "*";
-        }
-
         return new VitaEntry(this.Title, this.Lines.ToArray(), this.VitaEntryType, this.Attributes, this.Code);
       }
 
@@ -236,6 +227,20 @@ namespace ruttmann.vita.api
         else 
         {
           this.Code = this.Code + " " + code;
+        }
+      }
+
+      public void SetDefaultCode(string globalCode)
+      {
+        bool hasCodes = this.Code
+          .Split(' ')
+          .Where(x => !x.StartsWith('-'))
+          .Where(x => x.Length > 0)
+          .Any();
+        
+        if (!hasCodes && globalCode.Length > 0)
+        {
+          this.Code = this.Code + " " + globalCode;
         }
       }
     }
