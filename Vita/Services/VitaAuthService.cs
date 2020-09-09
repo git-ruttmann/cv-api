@@ -5,18 +5,19 @@ namespace ruttmann.vita.api
 {
   using System;
   using System.Collections.Generic;
-  using System.Text;
-  using System.Web;
 
   internal class VitaAuthService : IAuthService
   {
     private readonly IVitaDataService dataService;
 
+    private readonly ITimeSource timeSource;
+
     private Dictionary<string, ValidCodeAccess> cookieToCode = new Dictionary<string, ValidCodeAccess>();
 
-    public VitaAuthService(IVitaDataService dataService)
+    public VitaAuthService(IVitaDataService dataService, ITimeSource timeSource = null)
     {
       this.dataService = dataService;
+      this.timeSource = timeSource ?? new UtcSource();
     }
 
     /// <inheritdoc/>
@@ -24,7 +25,7 @@ namespace ruttmann.vita.api
     {
       if (this.dataService.IsValidCode(requestedCode))
       {
-        var accessToken = new ValidCodeAccess(requestedCode);
+        var accessToken = new ValidCodeAccess(requestedCode, this.timeSource.Now);
         this.cookieToCode[accessToken.Cookie] = accessToken;
 
         session = accessToken;
@@ -49,7 +50,7 @@ namespace ruttmann.vita.api
         return false;
       }
 
-      if (DateTime.UtcNow - accessToken.ValidationTime > TimeSpan.FromHours(2))
+      if (this.timeSource.Now - accessToken.ValidationTime > TimeSpan.FromHours(2))
       {
         this.cookieToCode.Remove(cookie);
         session = null;
@@ -61,18 +62,26 @@ namespace ruttmann.vita.api
     }
 
     /// <summary>
+    /// Provide the current UTC time
+    /// </summary>
+    private class UtcSource : ITimeSource
+    {
+      public DateTime Now => DateTime.UtcNow;
+    }
+
+    /// <summary>
     /// class to store valid access items.
     /// </summary>
     private class ValidCodeAccess : IAuthenticatedSession
     {
       private const Int32 CookieLength = 32;
 
-      public ValidCodeAccess(string code)
+      public ValidCodeAccess(string code, DateTime now)
       {
         this.Code = code;
         this.Cookie = GenerateRandomCookie();
         this.Key = Guid.NewGuid().ToString();
-        this.ValidationTime = DateTime.UtcNow;
+        this.ValidationTime = now;
       }
 
       public string Code { get; }

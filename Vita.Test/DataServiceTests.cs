@@ -1,5 +1,6 @@
 namespace Vita.Test
 {
+  using System;
   using System.Linq;
   using Microsoft.VisualStudio.TestTools.UnitTesting;
   using ruttmann.vita.api;
@@ -16,8 +17,8 @@ namespace Vita.Test
     [TestMethod]
     public void LoadXx()
     {
-      var dataservice = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
-      var items = dataservice.GetEntriesForCode("xx");
+      var dataService = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
+      var items = dataService.GetEntriesForCode("xx");
 
       Assert.AreEqual(12, items.Entries.Length);
       Assert.IsTrue(items.Entries.Any(x => x.Title == "Strength2"));
@@ -30,8 +31,8 @@ namespace Vita.Test
     [TestMethod]
     public void VerifyGlobalAttributes()
     {
-      var dataservice = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
-      var items = dataservice.GetEntriesForCode("xx").Entries;
+      var dataService = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
+      var items = dataService.GetEntriesForCode("xx").Entries;
 
       var introduction = items.Single(x => x.Title == "Welcome");
       Assert.IsTrue(introduction.Attributes.Contains("English"), "Must derive global attribute");
@@ -54,8 +55,8 @@ namespace Vita.Test
     [TestMethod]
     public void LoadYy()
     {
-      var dataservice = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
-      var items = dataservice.GetEntriesForCode("yy");
+      var dataService = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
+      var items = dataService.GetEntriesForCode("yy");
 
       var titles = items.Entries.Select(x => x.Title).ToArray();
 
@@ -79,11 +80,30 @@ namespace Vita.Test
       Assert.IsFalse(dataservice.IsValidCode("ab"));
     }
 
+    [TestMethod]
+    public void TestAuthCookies()
+    {
+      var timeMock = new MockTimeSource();
+      var dataService = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
+      var authService = new VitaAuthService(dataService, timeMock);
+
+      Assert.IsTrue(authService.IsValidCode("xx", out var session), "Must authenticate");
+      Assert.IsTrue(authService.IsValidCookie(session.Cookie, out var otherSession));
+      Assert.ReferenceEquals(session, otherSession);
+
+      Assert.IsFalse(authService.IsValidCookie(session.Cookie + "A", out var badSession), "different cookie must be invalid");
+      Assert.IsNull(badSession, "invalid cookie must return null session");
+
+      timeMock.Now += TimeSpan.FromHours(4);
+      Assert.IsFalse(authService.IsValidCookie(session.Cookie, out var timedOutSession), "Cookie may not live longer than 2 hours");
+      Assert.IsNull(timedOutSession, "timed out cookie must return null session");
+    }
+
     /// <summary>
     /// Provide some fake files
     /// </summary>
     /// <returns>A file system with content</returns>
-    private static IFileSystem Scenario1()
+    public static IFileSystem Scenario1()
     {
       var mock = new FileSystemMock();
       var codes = @"
@@ -193,6 +213,15 @@ I'm motivated. Yeah.
       mock.AddFile("general", general);
 
       return mock;
+    }
+
+    /// <summary>
+    /// Mock the current time
+    /// </summary>
+    private class MockTimeSource : ITimeSource
+    {
+      /// <inheritdoc/>
+      public DateTime Now { get; set; } = DateTime.UtcNow;
     }
   }
 }
