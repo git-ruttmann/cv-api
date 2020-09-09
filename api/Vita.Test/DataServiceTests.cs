@@ -1,0 +1,198 @@
+namespace Vita.Test
+{
+  using System.Linq;
+  using Microsoft.VisualStudio.TestTools.UnitTesting;
+  using ruttmann.vita.api;
+
+  /// <summary>
+  /// Test the data service
+  /// </summary>
+  [TestClass]
+  public class DataServiceTests
+  {
+    /// <summary>
+    /// load the contents for code xx
+    /// </summary>
+    [TestMethod]
+    public void LoadXx()
+    {
+      var dataservice = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
+      var items = dataservice.GetEntriesForCode("xx");
+
+      Assert.AreEqual(12, items.Entries.Length);
+      Assert.IsTrue(items.Entries.Any(x => x.Title == "Strength2"));
+      Assert.IsTrue(items.Entries.Any(x => x.Title == "Not for yy"));
+    }
+
+    /// <summary>
+    /// Verify the use of global attributes.
+    /// </summary>
+    [TestMethod]
+    public void VerifyGlobalAttributes()
+    {
+      var dataservice = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
+      var items = dataservice.GetEntriesForCode("xx").Entries;
+
+      var introduction = items.Single(x => x.Title == "Welcome");
+      Assert.IsTrue(introduction.Attributes.Contains("English"), "Must derive global attribute");
+
+      var strength1 = items.Single(x => x.Title == "Strength1");
+      Assert.IsTrue(strength1.Attributes.Contains("Short"), "Must derive global attribute");
+
+      var strength2 = items.Single(x => x.Title == "Strength2");
+      Assert.IsTrue(strength2.Attributes.Contains("Medium"), "Must use the attribute");
+      Assert.IsFalse(strength2.Attributes.Contains("Short"), "Must not derive the global attribute");
+      Assert.IsTrue(strength2.Attributes.Contains("German"), "Language isn't configured, must default to full language");
+      Assert.IsTrue(strength2.Attributes.Contains("English"), "Language isn't configured, must default to full language");
+
+      Assert.IsTrue(items.Any(x => x.Title == "Not for yy"));
+    }
+
+    /// <summary>
+    /// load the contents for code yy
+    /// </summary>
+    [TestMethod]
+    public void LoadYy()
+    {
+      var dataservice = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
+      var items = dataservice.GetEntriesForCode("yy");
+
+      var titles = items.Entries.Select(x => x.Title).ToArray();
+
+      Assert.IsTrue(items.Entries.Any(x => x.Title == "For yy only"));
+      Assert.IsFalse(items.Entries.Any(x => x.Title == "Not for yy"));
+      Assert.AreEqual(10, items.Entries.Length);
+    }
+
+    /// <summary>
+    /// Just load the contents
+    /// </summary>
+    [TestMethod]
+    public void TestValidCodes()
+    {
+      var dataservice = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
+
+      Assert.IsTrue(dataservice.IsValidCode("xx"));
+      Assert.IsTrue(dataservice.IsValidCode("yy"));
+      Assert.IsTrue(dataservice.IsValidCode("zz"));
+      Assert.IsFalse(dataservice.IsValidCode("abc"));
+      Assert.IsFalse(dataservice.IsValidCode("ab"));
+    }
+
+    /// <summary>
+    /// Provide some fake files
+    /// </summary>
+    /// <returns>A file system with content</returns>
+    private static IFileSystem Scenario1()
+    {
+      var mock = new FileSystemMock();
+      var codes = @"
+xx: all
+yy: all
+zz: all dotnet
+";
+      mock.AddFile("codes", codes);
+
+      var person = @"
+#code: all
+
+##person: Passion
+#attributes: english, short, medium, long
+
+Text about Passion
+
+##person: Bullets only
+#attributes: english, short
+- The first bullet
+- The second bullet
+
+##person: Bullets and text
+#attributes: english, short
+Initial text
+- The first bullet
+- The second bullet
+Trailing text
+
+##person: Text and links
+#attributes: english, short
+Some initial text
+- Bullet one
+- [""bullet link"", ""https://my.mycv.com/bullettarget""]
+- More bullets
+[""normal link"", ""https://my.mycv.com/normaltarget""]
+
+##person: For yy only
+#attributes: english, short
+#code: yy
+
+##person: For all explicitly
+#attributes: english, short
+#code: all
+
+##person: Not for yy
+#attributes: english, short
+#code: -yy
+      ";
+
+      mock.AddFile("person.txt", person);
+
+      var introduction = @"
+#attributes: english
+
+##introduction: Herzlich willkommen.
+#attributes: german
+#code: yy
+
+Hallo yy, Sie sind deutsch.
+
+##introduction: Herzlich willkommen.
+#code: dotnet
+
+Hello, you're from the group dotnet.
+
+##introduction: Welcome
+#code: xx
+
+Hello xx, you're english.
+      ";
+      mock.AddFile("introduction.txt", introduction);
+
+      var general = @"
+#code: all
+#attributes: short
+
+##include: introduction.txt
+##include: person.txt
+
+##strength: Strength1
+
+Text for strength one.
+
+##strength: Strength2
+#attributes: medium
+#code: xx
+
+Text for strength two.
+
+##strength: Strength3
+#attributes: long
+#code: -yy
+#code: -zz
+
+Text for strength three.
+
+##technology: Tech1
+
+Text for tech1
+
+##interest: Motivation
+
+I'm motivated. Yeah.
+        ";
+
+      mock.AddFile("general", general);
+
+      return mock;
+    }
+  }
+}

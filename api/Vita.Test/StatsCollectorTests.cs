@@ -9,10 +9,10 @@ namespace Vita.Test
     using ruttmann.vita.api;
 
     [TestClass]
-    public class UnitTest1
+    public class StatsCollectorTests
     {
 
-    public TestContext TestContext { get; set; } 
+        public TestContext TestContext { get; set; } 
 
         [TestMethod]
         public void CollectStats()
@@ -69,23 +69,6 @@ namespace Vita.Test
             timeMock.Now = startDate + TimeSpan.FromSeconds(300);
             session.RecordTopics(new TrackTopicsEvent("person", "S", track3));
             return session;
-        }
-
-        [TestMethod]
-        [Ignore]
-        public void LoadDataFile()
-        {
-            var stream = new FileStream("/home/ruttmann/cvData/generalContent", FileMode.Open);
-            var reader = new VitaStreamReader(new DiskFileSystem(), stream, Encoding.UTF8);
-            var items = reader.ReadEntries().ToArray();
-            Assert.IsTrue(items.Length > 5);
-            Assert.IsTrue(items.All(x => x.Codes.Any()));
-
-            var collection = new VitaEntryCollection(items.Select(x => new VitaEntryForSerialization(x)));
-            var text = JsonConvert.SerializeObject(collection, Formatting.Indented);
-            text = JsonConvert.SerializeObject(items, Formatting.Indented);
-
-            TestContext.WriteLine(text);
         }
 
         private class MockedTimeSource : ITimeSource

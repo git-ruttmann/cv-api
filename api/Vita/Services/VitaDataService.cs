@@ -2,6 +2,7 @@ namespace ruttmann.vita.api
 {
   using System;
   using System.Collections.Generic;
+  using System.IO;
   using System.Linq;
   using System.Text;
   using Microsoft.Extensions.Configuration;
@@ -19,7 +20,7 @@ namespace ruttmann.vita.api
 
     private VitaEntry[] database;
 
-    private ISet<string> knownCodes;
+    private Dictionary<string, string[]> codes;
 
     /// <summary>
     /// Create an instance with files from a configuration file
@@ -30,6 +31,7 @@ namespace ruttmann.vita.api
       this.fileSystem = new DiskFileSystem();
       this.configuration = configuration;
       this.configuredFiles = new string[0];
+      this.codes = new Dictionary<string, string[]>();
     }
 
     /// <summary>
@@ -61,8 +63,10 @@ namespace ruttmann.vita.api
     {
       this.LoadOnDemand();
 
+      var groups = this.codes[code].ToHashSet();
+
       var selectedEntries = this.database
-        .Where(x => FilterMatchesCode(code, x.Codes))
+        .Where(x => FilterMatchesCode(code, groups, x.Codes))
         .Select(x => new VitaEntryForSerialization(x));
       return new VitaEntryCollection(selectedEntries);
     }
@@ -71,7 +75,12 @@ namespace ruttmann.vita.api
     public bool IsValidCode(string code)
     {
       this.LoadOnDemand();
-      return this.knownCodes.Contains(code);
+      if (code == null)
+      {
+        return false;
+      }
+
+      return this.codes.ContainsKey(code);
     }
 
     private void LoadOnDemand()
@@ -95,24 +104,35 @@ namespace ruttmann.vita.api
       {
         if (fileSystem.TryGetStream(fileItem, out var fileStream))
         {
-          var reader = new VitaStreamReader(fileSystem, fileStream, Encoding.UTF8);
-          itemList.AddRange(reader.ReadEntries());
+          if (Path.GetFileName(fileItem) == "codes")
+          {
+            var reader = new CodesStreamReader(fileStream, Encoding.UTF8);
+            this.codes = reader.ReadCodes().ToDictionary(x => x.Key, x => x.Value);
+          }
+          else
+          {
+            var reader = new VitaStreamReader(fileSystem, fileStream, Encoding.UTF8);
+            itemList.AddRange(reader.ReadEntries());
+          }
         }
       }
 
       this.database = itemList.ToArray();
-
-      this.knownCodes = itemList.SelectMany(x => x.Codes).Where(x => x != "*").ToHashSet();
     }
 
-    private bool FilterMatchesCode(string code, ISet<string> codes)
+    private bool FilterMatchesCode(string code, ISet<string> groups, ISet<string> topicCodes)
     {
-      if (codes.Contains(code))
+      if (topicCodes.Contains(code))
       {
         return true;
       }
 
-      if (codes.Contains("*"))
+      if (topicCodes.Contains("-" + code))
+      {
+        return false;
+      }
+
+      if (topicCodes.Intersect(groups).Any())
       {
         return true;
       }
