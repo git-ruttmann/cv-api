@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -26,6 +27,16 @@ namespace ruttmann.vita.api
         {
             services.AddMvc();
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
+
+            if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("UseAzureKeyVault")))
+            {
+                services.AddSingleton(typeof(IFileSystem), typeof(DiskFileSystem));
+            }
+            else
+            {
+                services.AddSingleton(typeof(IFileSystem), typeof(BlobFileSystem));
+            }
+
             services.AddSingleton(typeof(IVitaDataService), typeof(VitaDataService));
             services.AddSingleton(typeof(IAuthService), typeof(VitaAuthService));
             services.AddSingleton(typeof(ITrackingService), typeof(TrackingService));
