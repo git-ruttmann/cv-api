@@ -7,6 +7,9 @@ namespace Vita.Test
   {
     private readonly VitaEntry[] vitaEntries;
 
+    /// <summary>
+    /// Create a mocked data service with some fake entries
+    /// </summary>
     public DataServiceMock()
     {
       this.vitaEntries = new VitaEntry[]
@@ -18,6 +21,7 @@ namespace Vita.Test
       };
     }
 
+    /// <inheritdoc/>
     public VitaEntryCollection GetEntriesForCode(string code)
     {
       var selectedEntries = this.vitaEntries
@@ -27,6 +31,7 @@ namespace Vita.Test
       return new VitaEntryCollection(selectedEntries);
     }
 
+    /// <inheritdoc/>
     public bool IsValidCode(string code)
     {
       if (code == "test")
@@ -39,6 +44,11 @@ namespace Vita.Test
       }
 
       return false;
+    }
+
+    /// <inheritdoc/>
+    public void Reload()
+    {      
     }
   }
 }

@@ -26,9 +26,9 @@ namespace ruttmann.vita.api
     /// Create an instance with files from a configuration file
     /// </summary>
     /// <param name="configuration">the configuration</param>
-    public VitaDataService(IConfiguration configuration)
+    public VitaDataService(IConfiguration configuration, IFileSystem fileSystem)
     {
-      this.fileSystem = new DiskFileSystem();
+      this.fileSystem = fileSystem;
       this.configuration = configuration;
       this.configuredFiles = new string[0];
       this.codes = new Dictionary<string, string[]>();
@@ -81,6 +81,13 @@ namespace ruttmann.vita.api
       }
 
       return this.codes.ContainsKey(code);
+    }
+
+    /// <inheritdoc/>
+    public void Reload()
+    {
+      this.database = null;
+      this.LoadOnDemand();
     }
 
     private void LoadOnDemand()

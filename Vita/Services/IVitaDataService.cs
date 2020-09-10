@@ -17,5 +17,10 @@ namespace ruttmann.vita.api
     /// <param name="code">the code to test</param>
     /// <returns>true if the code is valid</returns>
     bool IsValidCode(String code);
+
+    /// <summary>
+    /// reload the data
+    /// </summary>
+    void Reload();
   }
 }
