@@ -66,6 +66,20 @@ namespace Vita.Test
     }
 
     /// <summary>
+    /// Test topics can be deselected by a group.
+    /// </summary>
+    [TestMethod]
+    public void TestGroupNegation()
+    {
+      var dataService = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
+      var itemZ = dataService.GetEntriesForCode("zz").Entries.Single(x => x.Title == "Bullets and text");
+      var itemY = dataService.GetEntriesForCode("yy").Entries.Single(x => x.Title == "Bullets and text");
+
+      Assert.IsFalse(itemY.Lines.Any(x => x == "Initial text for the expert"));
+      Assert.IsTrue(itemZ.Lines.Any(x => x == "Initial text for the expert"));
+    }
+
+    /// <summary>
     /// Just load the contents
     /// </summary>
     [TestMethod]
@@ -109,7 +123,7 @@ namespace Vita.Test
       var codes = @"
 xx: all
 yy: all
-zz: all dotnet
+zz: all dotnet expert
 ";
       mock.AddFile("codes", codes);
 
@@ -128,7 +142,16 @@ Text about Passion
 
 ##person: Bullets and text
 #attributes: english, short
+#code: all -expert
 Initial text
+- The first bullet
+- The second bullet
+Trailing text
+
+##person: Bullets and text
+#attributes: english, short
+#code: expert
+Initial text for the expert
 - The first bullet
 - The second bullet
 Trailing text

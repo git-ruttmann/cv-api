@@ -64,9 +64,10 @@ namespace ruttmann.vita.api
       this.LoadOnDemand();
 
       var groups = this.codes[code].ToHashSet();
+      var negateGroups = groups.Select(x => "-" + x).ToHashSet();
 
       var selectedEntries = this.database
-        .Where(x => FilterMatchesCode(code, groups, x.Codes))
+        .Where(x => FilterMatchesCode(code, groups, negateGroups, x.Codes))
         .Select(x => new VitaEntryForSerialization(x));
       return new VitaEntryCollection(selectedEntries);
     }
@@ -127,7 +128,7 @@ namespace ruttmann.vita.api
       this.database = itemList.ToArray();
     }
 
-    private bool FilterMatchesCode(string code, ISet<string> groups, ISet<string> topicCodes)
+    private bool FilterMatchesCode(string code, ISet<string> groups, ISet<string> negateGroups, ISet<string> topicCodes)
     {
       if (topicCodes.Contains(code))
       {
@@ -135,6 +136,11 @@ namespace ruttmann.vita.api
       }
 
       if (topicCodes.Contains("-" + code))
+      {
+        return false;
+      }
+
+      if (topicCodes.Intersect(negateGroups).Any())
       {
         return false;
       }
