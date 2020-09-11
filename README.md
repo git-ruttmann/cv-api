@@ -1,27 +1,31 @@
-# Karriere
+# CV API
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 8.3.21.
+A dotnet REST API to provide topics for an online CV.
+The GUI part is handled by Angular [cv-angular](https://github.com/git-ruttmann/cv-angular)
 
-## Development server
+## API path
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+* api/v1/authenticate: authenticate codes
+* api/v1/vita: read the vita entries
+* api/v1/track: track user interactions
+* api/v1/health: provide health status
+* api/v1/reload: reload the contents
 
-## Code scaffolding
+## Architecture
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+* The API is build upon dotnet core. 
+* The data can be provided by Azure BLOB storage or disk files.
+* The login codes and groups are listed in the file codes.
+  Files are configured in appsettings.json.
+* Services are tested in Vita.Test.
+* The data provider is mocked by an in memory file system.
 
-## Build
+## Deployment
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+* The API is hosted as Azure web app.
+* The Angular Frontend is hosted by Azure blob storage.
+* The frontend is built and deployed by [Azure DevOps](https://dev.azure.com/az102/cv-angular).
+* The frontend [cv.ruttmann.name](https://cv.ruttmann.name) is handled by an Azure Application Gateway, including SSL.
+* The raw data is provided by an Azure blob storage.
+* The access to the raw data is secured by Azure idendity.
 
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
