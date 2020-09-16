@@ -9,7 +9,7 @@ namespace ruttmann.vita.api.Controllers
   [Route("api/v1/[controller]")]
   public class HealthController : Controller
   {
-    public HealthController(IHostingEnvironment env)
+    public HealthController(IWebHostEnvironment env)
     {
     }
 

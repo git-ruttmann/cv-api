@@ -1,11 +1,11 @@
 namespace ruttmann.vita.api.Controllers
 {
 	using System;
-  using System.Linq;
   using Microsoft.AspNetCore.Hosting;
   using Microsoft.AspNetCore.Http;
   using Microsoft.AspNetCore.Mvc;
   using Microsoft.Extensions.DependencyInjection;
+  using Microsoft.Extensions.Hosting;
 
   [Route("api/v1/[controller]")]
   public class AuthenticateController : Controller
@@ -17,7 +17,7 @@ namespace ruttmann.vita.api.Controllers
 
     const String AuthCookieHeaderName = "VitaApiAuth";
 
-    public AuthenticateController(IHostingEnvironment env)
+    public AuthenticateController(IWebHostEnvironment env)
     {
         this.IsDevelopmentMode = env.IsDevelopment();
     }

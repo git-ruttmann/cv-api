@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Vita/bin/Debug/netcoreapp2.2/vitaApi.dll",
+            "program": "${workspaceFolder}/Vita/bin/Debug/netcoreapp3.1/vitaApi.dll",
             "args": [],
             "cwd": "${workspaceFolder}/Vita",
             "stopAtEntry": false,
