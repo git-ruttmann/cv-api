@@ -43,7 +43,7 @@ namespace ruttmann.vita.api.Controllers
         {
           Secure = !allowHacks,
           Expires = DateTime.UtcNow + TimeSpan.FromHours(2),
-          SameSite = allowHacks ? SameSiteMode.None : SameSiteMode.Strict,
+          SameSite = SameSiteMode.Strict,
         };
 
         this.Response.Cookies.Append(AuthCookieHeaderName, session.Cookie, cookieOptions);
