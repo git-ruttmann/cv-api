@@ -113,6 +113,42 @@ namespace Vita.Test
       Assert.IsNull(timedOutSession, "timed out cookie must return null session");
     }
 
+    [TestMethod]
+    public void TestIntermediateIncludes()
+    {
+      var mock = new FileSystemMock();
+      mock.AddFile("codes", "xx: all");
+      mock.AddFile("general", "##include: l1.txt");
+      mock.AddFile("l1.txt", @"
+#code: all
+##include: l2.txt
+##project: P1
+P1 text
+
+##include: l3.txt
+##include: l4.txt");
+      mock.AddFile("l2.txt", @"
+#code: all
+##project: P2
+P2 text");
+      mock.AddFile("l3.txt", @"
+#code: all
+##project: P3
+P3 text");
+      mock.AddFile("l4.txt", @"
+#code: all
+##project: P4
+P4 text");
+
+      var dataService = VitaDataService.CreateMockedService(mock, new[] { "general", "codes" });
+      var entries = dataService.GetEntriesForCode("xx").Entries;
+
+      Assert.AreEqual(1, entries.Count(x => x.Title == "P1"));
+      Assert.AreEqual(1, entries.Count(x => x.Title == "P2"));
+      Assert.AreEqual(1, entries.Count(x => x.Title == "P3"));
+      Assert.AreEqual(1, entries.Count(x => x.Title == "P4"));
+    }
+
     /// <summary>
     /// Provide some fake files
     /// </summary>

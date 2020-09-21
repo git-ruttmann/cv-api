@@ -47,6 +47,7 @@ namespace ruttmann.vita.api
             if (this.CloseSectionAndValidate())
             {
               yield return this.builder.BuildEntry(globalAttributes);
+              this.builder = null;
             }
 
             this.BeginSection(line);
