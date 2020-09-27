@@ -35,6 +35,9 @@ namespace ruttmann.vita.api
       messageLines.Add($"Login code '{report.Code}' from: {report.Ip} at {report.StartTime} for {FormatDuration(report.Duration)}");
       messageLines.Add(String.Empty);
       messageLines.AddRange(report.Topics.Select(x => $"{x.Url}/{x.TopicDetail}/{x.Title} for { FormatDuration(x.ImpressionTimeSpan)}"));
+      messageLines.Add(String.Empty);
+      messageLines.Add("Links:");
+      messageLines.AddRange(report.ClickedLinks);
 
       var mail = new MailMessage("cv@ruttmann.name", "matthias@ruttmann.name");
       mail.Subject = $"CV report for {report.Code}, duration {report.Duration}";

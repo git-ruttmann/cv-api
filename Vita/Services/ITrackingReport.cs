@@ -44,5 +44,6 @@ namespace ruttmann.vita.api
     String Code { get; }
     String Ip { get; }
     IReadOnlyList<ITopicReport> Topics { get;}
+    IReadOnlyList<string> ClickedLinks { get; }
   }
 }

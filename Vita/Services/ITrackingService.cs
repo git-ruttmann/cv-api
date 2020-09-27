@@ -61,6 +61,12 @@ namespace ruttmann.vita.api
     void RecordUrl(UrlTrackingEvent trackingEvent);
 
     /// <summary>
+    /// record a clicked link
+    /// </summary>
+    /// <param name="url">the clicked url</param>
+    void RecordLinkClick(string url);
+
+    /// <summary>
     /// Generate a tracking report from all recorded events
     /// </summary>
     /// <returns>a tracking report</returns>

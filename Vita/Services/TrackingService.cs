@@ -36,13 +36,15 @@ namespace ruttmann.vita.api
 
   public class UrlTrackingEvent
   {
-    public UrlTrackingEvent(String url, String detail)
+    public UrlTrackingEvent(String url, String topic, String detail)
     {
       Url = url;
+      Topic = topic;
       Detail = detail;
     }
 
     public string Url { get; }
+    public string Topic { get; }
     public string Detail { get; }
   }
 
@@ -144,6 +146,7 @@ namespace ruttmann.vita.api
       private string sessionId;
       private string ip;
       private readonly ITimeSource timeSource;
+      private readonly List<string> clickedLinks;
       private List<Tuple<DateTime, UrlTrackingEvent>> urlTrackEvents;
       private List<Tuple<DateTime, TrackTopicsEvent>> topicEvents;
       private DateTime createTime;
@@ -157,6 +160,7 @@ namespace ruttmann.vita.api
         this.createTime = timeSource.Now;
         this.topicEvents = new List<Tuple<DateTime, TrackTopicsEvent>>();
         this.urlTrackEvents = new List<Tuple<DateTime, UrlTrackingEvent>>();
+        this.clickedLinks = new List<string>();
       }
 
       public string Code { get; }
@@ -176,7 +180,7 @@ namespace ruttmann.vita.api
         this.urlTrackEvents.Add(Tuple.Create(this.timeSource.Now, urlTrackingEvent));
         this.IsDirty = true;
 
-        var lineText = DateTime.Now.ToString() + $" ({this.Code}/{this.ip}): {urlTrackingEvent.Url}/{urlTrackingEvent.Detail}";
+        var lineText = DateTime.Now.ToString() + $" ({this.Code}/{this.ip}): {urlTrackingEvent.Url}/{urlTrackingEvent.Topic}/{urlTrackingEvent.Detail}";
         TrackingService.AppendLog(lineText);
       }
 
@@ -217,8 +221,13 @@ namespace ruttmann.vita.api
       /// <inheritdoc/>
       public ITrackingReport GenerateReport()
       {
-        var builder = new TrackingReportBuilder(this.topicEvents, this.urlTrackEvents, this.timeSource.Now);
+        var builder = new TrackingReportBuilder(this.topicEvents, this.urlTrackEvents, this.timeSource.Now, this.clickedLinks);
         return builder.Build(this.Code, this.ip);
+      }
+
+      public void RecordLinkClick(string url)
+      {
+        this.clickedLinks.Add(url);
       }
     }
 
@@ -229,22 +238,25 @@ namespace ruttmann.vita.api
       private Tuple<DateTime, UrlTrackingEvent>[] urlTrackEvents;
       private Dictionary<String, TopicReport> topicDictionary;
       private readonly DateTime now;
+      private readonly IEnumerable<string> clickedLinks;
 
       public TrackingReportBuilder(
         IEnumerable<Tuple<DateTime, TrackTopicsEvent>> topicEvents, 
         IEnumerable<Tuple<DateTime, UrlTrackingEvent>> urlTrackEvents,
-        DateTime now)
+        DateTime now,
+        IEnumerable<string> clickedLinks)
       {
         this.topicEvents = topicEvents.ToArray();
         this.urlTrackEvents = urlTrackEvents.ToArray();
         this.now = now;
+        this.clickedLinks = clickedLinks;
       }
 
       public ITrackingReport Build(string code, string ip)
       {
         if (this.topicEvents.Length == 0)
         {
-          return new TrackingReport(code, ip, now, TimeSpan.FromSeconds(0), new ITopicReport[0]);
+          return new TrackingReport(code, ip, now, TimeSpan.FromSeconds(0), new ITopicReport[0], new string[0]);
         }
 
         var startTime = this.topicEvents.First().Item1;
@@ -261,19 +273,24 @@ namespace ruttmann.vita.api
           foreach (var topicEvent in topicCollection.Topics)
           {
             var topicReport = this.GetTopicReport(topicCollection, topicEvent);
-            if (topicReport.LastVisibleGeneration != generation - 1)
-            {
-              topicReport.ImpressionCount += 1;
-            }
-
-            topicReport.LastVisibleGeneration = generation;
-            topicReport.ImpressionTimeSpan += duration * (topicEvent.End - topicEvent.Start);
+            AccumulateImpressionTime(generation, duration, topicEvent, topicReport);
           }
 
           generation++;
         }
 
-        return new TrackingReport(code, ip, startTime, endOfImpressions - startTime, topicDictionary.Values);
+        return new TrackingReport(code, ip, startTime, endOfImpressions - startTime, topicDictionary.Values, this.clickedLinks);
+      }
+
+      private static void AccumulateImpressionTime(int generation, TimeSpan duration, TrackTopic topicEvent, TopicReport topicReport)
+      {
+        if (topicReport.LastVisibleGeneration != generation - 1)
+        {
+          topicReport.ImpressionCount += 1;
+        }
+
+        topicReport.LastVisibleGeneration = generation;
+        topicReport.ImpressionTimeSpan += duration * (topicEvent.End - topicEvent.Start);
       }
 
       private TopicReport GetTopicReport(TrackTopicsEvent topicCollection, TrackTopic topicEvent)
@@ -293,7 +310,7 @@ namespace ruttmann.vita.api
       {
         var urlTrackEvents = this.urlTrackEvents
           .Where(x => x.Item2.Url == "/")
-          .Concat(new[] { Tuple.Create(this.now + TimeSpan.FromDays(1), new UrlTrackingEvent("/", String.Empty)) })
+          .Concat(new[] { Tuple.Create(this.now + TimeSpan.FromDays(1), new UrlTrackingEvent("/", String.Empty, String.Empty)) })
           .ToArray();
 
         var nextUrlEvent = 0;
@@ -328,13 +345,20 @@ namespace ruttmann.vita.api
     /// </summary>
     private class TrackingReport : ITrackingReport
     {
-      public TrackingReport(string code, string ip, DateTime startTime, TimeSpan duration, IEnumerable<ITopicReport> topics)
+      public TrackingReport(
+        string code, 
+        string ip, 
+        DateTime startTime, 
+        TimeSpan duration, 
+        IEnumerable<ITopicReport> topics,
+        IEnumerable<string> links)
       {
         this.Code = code;
         this.Ip = ip;
         this.Topics = topics.ToArray();
         this.StartTime = startTime;
         this.Duration = duration;
+        this.ClickedLinks = links.ToArray();
       }
 
       /// <inheritdoc/>
@@ -351,6 +375,8 @@ namespace ruttmann.vita.api
 
       /// <inheritdoc/>
       public IReadOnlyList<ITopicReport> Topics { get; }
+
+      public IReadOnlyList<string> ClickedLinks { get; }
     }
 
     /// <summary>

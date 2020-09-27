@@ -27,10 +27,29 @@
         this.HttpContext.Request.Headers["SessionKey"].Single(),
         GetRemoteIp());
 
-      var trackEvent = new UrlTrackingEvent(value.Url, value.Duration);
+      var trackEvent = new UrlTrackingEvent(value.Url, value.Topic, value.Duration);
       session.RecordUrl(trackEvent);
 
       return StatusCode(200);
+    }
+
+    /// <summary>
+    /// Get the collection of vita entries for the active code.
+    /// </summary>
+    /// <returns>a vita collection</returns>
+    [HttpPost("link")]
+		[Authorize]
+    public IActionResult PostClickedLink([FromBody]TrackLinkClickRequest value)
+		{
+			var trackingService = this.HttpContext.RequestServices.GetRequiredService<ITrackingService>();
+      var session = trackingService.GetSession(
+        this.HttpContext.Request.Headers["Code"].Single(),
+        this.HttpContext.Request.Headers["SessionKey"].Single(),
+        GetRemoteIp());
+
+      session.RecordLinkClick(value.Url);
+
+			return StatusCode(200);
     }
 
     /// <summary>
@@ -76,7 +95,16 @@
   public class UrlTrackRequest
   {
 		public String Url { get; set; }
+		public String Topic { get; set; }
 		public String Duration { get; set; }
+  }
+
+  /// <summary>
+  /// track a clicked link
+  /// </summary>
+  public class TrackLinkClickRequest
+  {
+		public String Url { get; set; }
   }
 
   /// <summary>
