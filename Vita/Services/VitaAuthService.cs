@@ -25,7 +25,8 @@ namespace ruttmann.vita.api
     {
       if (this.dataService.IsValidCode(requestedCode))
       {
-        var accessToken = new ValidCodeAccess(requestedCode, this.timeSource.Now);
+        var customAnimation = this.dataService.GetCustomAnimationForCode(requestedCode);
+        var accessToken = new ValidCodeAccess(requestedCode, this.timeSource.Now, customAnimation);
         this.cookieToCode[accessToken.Cookie] = accessToken;
 
         session = accessToken;
@@ -74,14 +75,15 @@ namespace ruttmann.vita.api
     /// </summary>
     private class ValidCodeAccess : IAuthenticatedSession
     {
-      private const Int32 CookieLength = 32;
+      private const Int32 CookieLength = 430;
 
-      public ValidCodeAccess(string code, DateTime now)
+      public ValidCodeAccess(string code, DateTime now, string customAnimation)
       {
         this.Code = code;
         this.Cookie = GenerateRandomCookie();
         this.Key = Guid.NewGuid().ToString();
         this.ValidationTime = now;
+        this.CustomAnimation = customAnimation;
       }
 
       public string Code { get; }
@@ -91,6 +93,8 @@ namespace ruttmann.vita.api
       public DateTime ValidationTime { get; }
 
       public string Key { get; }
+
+      public string CustomAnimation { get; }
 
       private String GenerateRandomCookie()
       {

@@ -10,6 +10,7 @@ namespace ruttmann.vita.api
     String Code { get; }
     String Key { get; }
     String Cookie { get; }
+    String CustomAnimation { get; }
   }
 
   public interface IAuthService

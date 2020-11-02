@@ -29,28 +29,32 @@ namespace ruttmann.vita.api.Controllers
     /// </summary>
     /// <param name="value">the value</param>
     [HttpPost]
-    public void Post([FromForm]CodeCheckRequest value)
+		[Produces("application/json")]
+    public CodeCheckReply Post([FromForm]CodeCheckRequest value)
     {
       var authService = this.HttpContext.RequestServices.GetRequiredService<IAuthService>();
 
-      if (authService.IsValidCode(value.LoginCode, out var session))
+      if (!authService.IsValidCode(value.LoginCode, out var session))
       {
-        this.Response.StatusCode = 200;
-
-        var allowHacks = this.IsDevelopmentMode && value.LoginCode.StartsWith("x");
-        
-        var cookieOptions = new CookieOptions() 
-        {
-          Secure = !allowHacks,
-          Expires = DateTime.UtcNow + TimeSpan.FromHours(2),
-          SameSite = SameSiteMode.Strict,
-        };
-
-        this.Response.Cookies.Append(AuthCookieHeaderName, session.Cookie, cookieOptions);
-        return;
+        this.Response.StatusCode = 401;
+        return new CodeCheckReply();
       }
 
-      this.Response.StatusCode = 401;
+      var allowHacks = this.IsDevelopmentMode && value.LoginCode.StartsWith("x");
+      
+      var cookieOptions = new CookieOptions() 
+      {
+        Secure = !allowHacks,
+        Expires = DateTime.UtcNow + TimeSpan.FromHours(2),
+        SameSite = SameSiteMode.Strict,
+      };
+
+      this.Response.Cookies.Append(AuthCookieHeaderName, session.Cookie, cookieOptions);
+
+      this.Response.StatusCode = 200;
+      return new CodeCheckReply {
+          CustomAnimation = session.CustomAnimation
+        };
     }
   }
 
@@ -60,5 +64,10 @@ namespace ruttmann.vita.api.Controllers
   public class CodeCheckRequest
   {
     public String LoginCode { get; set; }
+  }
+
+  public class CodeCheckReply
+  {
+    public String CustomAnimation { get; set; }
   }
 }

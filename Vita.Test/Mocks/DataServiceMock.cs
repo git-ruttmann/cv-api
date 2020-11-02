@@ -22,6 +22,12 @@ namespace Vita.Test
     }
 
     /// <inheritdoc/>
+    public string GetCustomAnimationForCode(string code)
+    {
+      return string.Empty;
+    }
+
+    /// <inheritdoc/>
     public VitaEntryCollection GetEntriesForCode(string code)
     {
       var selectedEntries = this.vitaEntries

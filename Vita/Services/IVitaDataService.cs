@@ -22,5 +22,12 @@ namespace ruttmann.vita.api
     /// reload the data
     /// </summary>
     void Reload();
+
+    /// <summary>
+    /// Get the custom animation for a code
+    /// </summary>
+    /// <param name="code">the code</param>
+    /// <returns>the name of a custom animation or an empty string</returns>
+    string GetCustomAnimationForCode(string code);
   }
 }

@@ -94,6 +94,30 @@ namespace Vita.Test
       Assert.IsFalse(dataservice.IsValidCode("ab"));
     }
 
+    /// <summary>
+    /// Query the animation for a code that doesn't have one
+    /// </summary>
+    [TestMethod]
+    public void TestMissingAnimation()
+    {
+      var dataservice = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
+
+      Assert.IsTrue(dataservice.IsValidCode("xx"));
+      Assert.AreEqual(0, dataservice.GetCustomAnimationForCode("xx").Length);
+    }
+
+    /// <summary>
+    /// Query the animation for a code with animation
+    /// </summary>
+    [TestMethod]
+    public void TestAnimation()
+    {
+      var dataservice = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
+
+      Assert.IsTrue(dataservice.IsValidCode("xg"));
+      Assert.AreEqual("flyinGoogle", dataservice.GetCustomAnimationForCode("xg"));
+    }
+
     [TestMethod]
     public void TestAuthCookies()
     {
@@ -158,6 +182,7 @@ P4 text");
       var mock = new FileSystemMock();
       var codes = @"
 xx: all
+xg: all
 yy: all
 zz: all dotnet expert
 ";
@@ -223,6 +248,13 @@ Some initial text
 #code: yy
 
 Hallo yy, Sie sind deutsch.
+
+##introduction: Herzlich willkommen.
+#attributes: german
+#code: xg
+
+Hallo xg, hier ist eine spezielle animation.
+animation:flyinGoogle
 
 ##introduction: Herzlich willkommen.
 #code: dotnet

@@ -73,6 +73,26 @@ namespace ruttmann.vita.api
     }
 
     /// <inheritdoc/>
+    public string GetCustomAnimationForCode(string code)
+    {
+      this.LoadOnDemand();
+
+      var groups = this.codes[code].ToHashSet();
+      var negateGroups = groups.Select(x => "-" + x).ToHashSet();
+
+      var introductionEntry = this.database
+        .Where(x => x.VitaEntryType == VitaEntryType.Introduction)
+        .FirstOrDefault(x => FilterMatchesCode(code, groups, negateGroups, x.Codes));
+      
+      var customAnimation = introductionEntry?.Lines
+        .FirstOrDefault(line => line.StartsWith("animation:"))
+        ?.Substring("animation:".Length)
+        ?? String.Empty;
+      
+      return customAnimation;
+    }
+
+    /// <inheritdoc/>
     public bool IsValidCode(string code)
     {
       this.LoadOnDemand();

@@ -23,9 +23,9 @@ namespace ruttmann.vita.api
 
     private void HandleNewReport(ITrackingReport report)
     {
-      if (report.Code == "xx")
+      if (report.Code.StartsWith("x"))
       {
-        TrackingService.AppendLog("do not send report to xx");
+        TrackingService.AppendLog($"do not send report to {report.Code}");
         return;
       }
 
