@@ -8,7 +8,7 @@
 	using Microsoft.AspNetCore.Mvc;
   using Microsoft.Extensions.DependencyInjection;
 
-  [Route("api/v1/[controller]")]
+  [Route("api/v1/reporting")]
 	public class TrackController : Controller
 	{
 		/// <summary>
