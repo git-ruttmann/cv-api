@@ -43,11 +43,15 @@ namespace ruttmann.vita.api
     /// <inheritdoc/>
     public async Task<string> Authenticate(string code)
     {
+      TrackingService.AppendLog($"auth with client id {this.clientId}");
       var formData = this.EncodeOauthData(code);
 
       var client = this.httpClientFactory.CreateClient("linkedin");
       var response = await client.PostAsync(LinkedInAuthEndpoint, formData);
       var responseData = response.Content.ReadAsStringAsync();
+
+      TrackingService.AppendLog("auth result");
+      TrackingService.AppendLog(await responseData);
 
       if (!response.IsSuccessStatusCode)
       {
