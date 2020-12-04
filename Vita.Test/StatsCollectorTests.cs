@@ -41,7 +41,7 @@ namespace Vita.Test
 
         private static ITrackingSession SessionTrackingScenarioOne(MockedTimeSource timeMock, TrackingService trackService)
         {
-            var session = trackService.GetSession("Test", Guid.NewGuid().ToString(), "1.1.1.1");
+            var session = trackService.GetOrCreateSession("Test", "Name of Test", Guid.NewGuid().ToString(), "1.1.1.1");
 
             var startDate = new DateTime(2020, 2, 2, 12, 0, 13);
 

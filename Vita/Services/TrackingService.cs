@@ -99,13 +99,13 @@ namespace ruttmann.vita.api
       }
     }
 
-    public ITrackingSession GetSession(string code, string sessionId, string ip)
+    public ITrackingSession GetOrCreateSession(string code, string name, string sessionId, string ip)
     {
       lock(this.sessionDict)
       {
         if (!this.sessionDict.TryGetValue(sessionId, out var session))
         {
-          session = new TrackingSession(code, sessionId, ip, this.timeSource);
+          session = new TrackingSession(code, name, sessionId, ip, this.timeSource);
           sessionDict.Add(sessionId, session);
         }
 
@@ -151,9 +151,10 @@ namespace ruttmann.vita.api
       private List<Tuple<DateTime, TrackTopicsEvent>> topicEvents;
       private DateTime createTime;
 
-      public TrackingSession(string code, string sessionId, string ip, ITimeSource timeSource)
+      public TrackingSession(string code, string name, string sessionId, string ip, ITimeSource timeSource)
       {
         this.Code = code;
+        this.Name = name;
         this.sessionId = sessionId;
         this.ip = ip;
         this.timeSource = timeSource;
@@ -164,6 +165,8 @@ namespace ruttmann.vita.api
       }
 
       public string Code { get; }
+
+      public string Name { get; }
 
       public Boolean IsDirty { get; set; }
 
@@ -222,7 +225,7 @@ namespace ruttmann.vita.api
       public ITrackingReport GenerateReport()
       {
         var builder = new TrackingReportBuilder(this.topicEvents, this.urlTrackEvents, this.timeSource.Now, this.clickedLinks);
-        return builder.Build(this.Code, this.ip);
+        return builder.Build(this.Code, this.Name, this.ip);
       }
 
       public void RecordLinkClick(string url)
@@ -252,11 +255,11 @@ namespace ruttmann.vita.api
         this.clickedLinks = clickedLinks;
       }
 
-      public ITrackingReport Build(string code, string ip)
+      public ITrackingReport Build(string code, string name, string ip)
       {
         if (this.topicEvents.Length == 0)
         {
-          return new TrackingReport(code, ip, now, TimeSpan.FromSeconds(0), new ITopicReport[0], new string[0]);
+          return new TrackingReport(code, name, ip, now, TimeSpan.FromSeconds(0), new ITopicReport[0], new string[0]);
         }
 
         var startTime = this.topicEvents.First().Item1;
@@ -279,7 +282,7 @@ namespace ruttmann.vita.api
           generation++;
         }
 
-        return new TrackingReport(code, ip, startTime, endOfImpressions - startTime, topicDictionary.Values, this.clickedLinks);
+        return new TrackingReport(code, name, ip, startTime, endOfImpressions - startTime, topicDictionary.Values, this.clickedLinks);
       }
 
       private static void AccumulateImpressionTime(int generation, TimeSpan duration, TrackTopic topicEvent, TopicReport topicReport)
@@ -347,13 +350,15 @@ namespace ruttmann.vita.api
     {
       public TrackingReport(
         string code, 
-        string ip, 
+        string name,
+        string ip,
         DateTime startTime, 
         TimeSpan duration, 
         IEnumerable<ITopicReport> topics,
         IEnumerable<string> links)
       {
         this.Code = code;
+        this.Name = name;
         this.Ip = ip;
         this.Topics = topics.ToArray();
         this.StartTime = startTime;
@@ -372,6 +377,9 @@ namespace ruttmann.vita.api
 
       /// <inheritdoc/>
       public string Ip { get; }
+
+      /// <inheritdoc/>
+      public string Name { get; }
 
       /// <inheritdoc/>
       public IReadOnlyList<ITopicReport> Topics { get; }

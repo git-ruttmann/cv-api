@@ -42,6 +42,7 @@ namespace ruttmann.vita.api
     DateTime StartTime { get; }
     TimeSpan Duration { get; }
     String Code { get; }
+    String Name { get; }
     String Ip { get; }
     IReadOnlyList<ITopicReport> Topics { get;}
     IReadOnlyList<string> ClickedLinks { get; }

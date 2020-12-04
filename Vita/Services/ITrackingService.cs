@@ -16,10 +16,11 @@ namespace ruttmann.vita.api
     /// Get the tracking session
     /// </summary>
     /// <param name="code">the login code</param>
+    /// <param name="name">the login name in case of OAuth</param>
     /// <param name="sessionId">the session identifier</param>
     /// <param name="ip">the remote ip</param>
     /// <returns>a session for tracking</returns>
-    ITrackingSession GetSession(String code, String sessionId, String ip);
+    ITrackingSession GetOrCreateSession(String code, String name, String sessionId, String ip);
     
     /// <summary>
     /// publish the reports now (for unittesting). This is internally called by a timer.

@@ -8,6 +8,7 @@ namespace ruttmann.vita.api
   public interface IAuthenticatedSession
   {
     String Code { get; }
+    String Name { get; }
     String Key { get; }
     String Cookie { get; }
     String CustomAnimation { get; }
@@ -27,8 +28,9 @@ namespace ruttmann.vita.api
     /// Verifies if the code is valid.
     /// </summary>
     /// <param name="requestedCode">the code</param>
+    /// <param name="userName">the name of the user</param>
     /// <param name="session">the session information if the code is valid</param>
     /// <returns>true if the code is valid</returns>
-    Boolean IsValidCode(string requestedCode, out IAuthenticatedSession session);
+    Boolean IsValidCode(string requestedCode, string userName, out IAuthenticatedSession session);
   }
 }

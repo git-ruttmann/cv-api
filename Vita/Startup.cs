@@ -20,7 +20,9 @@
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHttpClient();
             services.AddControllersWithViews();
+
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie();
 
             if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("UseAzureKeyVault")))
@@ -33,6 +35,7 @@
             }
 
             services.AddSingleton(typeof(IVitaDataService), typeof(VitaDataService));
+            services.AddSingleton(typeof(ILinkedInOAuthService), typeof(LinkedInOAuthService));
             services.AddSingleton(typeof(IAuthService), typeof(VitaAuthService));
             services.AddSingleton(typeof(ITrackingService), typeof(TrackingService));
             services.AddSingleton(typeof(ITrackingReportMailer), typeof(TrackingReportMailer));

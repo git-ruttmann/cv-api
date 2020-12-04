@@ -19,15 +19,8 @@
 		[Authorize]
     public IActionResult Post([FromBody]UrlTrackRequest value)
     {
-      var trackingService = this.HttpContext.RequestServices.GetRequiredService<ITrackingService>();
-      string remoteIp = GetRemoteIp();
-
-      var session = trackingService.GetSession(
-        this.HttpContext.Request.Headers["Code"].Single(),
-        this.HttpContext.Request.Headers["SessionKey"].Single(),
-        GetRemoteIp());
-
       var trackEvent = new UrlTrackingEvent(value.Url, value.Topic, value.Duration);
+      var session = this.GetOrCreateSession();
       session.RecordUrl(trackEvent);
 
       return StatusCode(200);
@@ -41,12 +34,7 @@
 		[Authorize]
     public IActionResult PostClickedLink([FromBody]TrackLinkClickRequest value)
 		{
-			var trackingService = this.HttpContext.RequestServices.GetRequiredService<ITrackingService>();
-      var session = trackingService.GetSession(
-        this.HttpContext.Request.Headers["Code"].Single(),
-        this.HttpContext.Request.Headers["SessionKey"].Single(),
-        GetRemoteIp());
-
+      var session = this.GetOrCreateSession();
       session.RecordLinkClick(value.Url);
 
 			return StatusCode(200);
@@ -60,22 +48,26 @@
 		[Authorize]
     public IActionResult PostTopics([FromBody]TrackTopicsRequest value)
 		{
-			var trackingService = this.HttpContext.RequestServices.GetRequiredService<ITrackingService>();
-      var session = trackingService.GetSession(
-        this.HttpContext.Request.Headers["Code"].Single(),
-        this.HttpContext.Request.Headers["SessionKey"].Single(),
-        GetRemoteIp());
-
-			var remoteIp = this.GetRemoteIp();
 			var trackEvent = new TrackTopicsEvent(
 				value.Url,
 				value.Duration,
 				value.Topics);
 
+      var session = this.GetOrCreateSession();
       session.RecordTopics(trackEvent);
 
 			return StatusCode(200);
 		}
+
+    private ITrackingSession GetOrCreateSession()
+    {
+			var trackingService = this.HttpContext.RequestServices.GetRequiredService<ITrackingService>();
+      return trackingService.GetOrCreateSession(
+        this.HttpContext.Request.Headers["Code"].Single(),
+        this.HttpContext.Request.Headers["SessionUser"].Single(),
+        this.HttpContext.Request.Headers["SessionKey"].Single(),
+        GetRemoteIp());
+    }
 
     private string GetRemoteIp()
     {

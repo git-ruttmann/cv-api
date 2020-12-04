@@ -32,7 +32,8 @@ namespace ruttmann.vita.api
       TrackingService.AppendLog("generating mail");
 
       var messageLines = new List<String>();
-      messageLines.Add($"Login code '{report.Code}' from: {report.Ip} at {report.StartTime} for {FormatDuration(report.Duration)}");
+      var oauthName = report.Code != report.Name && report.Name != string.Empty ? " (" + report.Name + ")" : string.Empty;
+      messageLines.Add($"Login code '{report.Code}'{oauthName} from: {report.Ip} at {report.StartTime} for {FormatDuration(report.Duration)}");
       messageLines.Add(String.Empty);
       messageLines.AddRange(report.Topics.Select(x => $"{x.Url}/{x.TopicDetail}/{x.Title} for { FormatDuration(x.ImpressionTimeSpan)}"));
       messageLines.Add(String.Empty);

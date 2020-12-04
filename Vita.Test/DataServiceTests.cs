@@ -125,7 +125,7 @@ namespace Vita.Test
       var dataService = VitaDataService.CreateMockedService(Scenario1(), new[] { "general", "codes" });
       var authService = new VitaAuthService(dataService, timeMock);
 
-      Assert.IsTrue(authService.IsValidCode("xx", out var session), "Must authenticate");
+      Assert.IsTrue(authService.IsValidCode("xx", "xx", out var session), "Must authenticate");
       Assert.IsTrue(authService.IsValidCookie(session.Cookie, out var otherSession));
       Assert.ReferenceEquals(session, otherSession);
 

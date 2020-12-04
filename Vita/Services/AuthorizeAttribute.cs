@@ -39,6 +39,7 @@ namespace ruttmann.vita.api
 
       context.HttpContext.Request.Headers.Add("Code", new StringValues(session.Code));
       context.HttpContext.Request.Headers.Add("SessionKey", new StringValues(session.Key));
+      context.HttpContext.Request.Headers.Add("SessionUser", new StringValues(session.Name));
       await next();
     }
   }

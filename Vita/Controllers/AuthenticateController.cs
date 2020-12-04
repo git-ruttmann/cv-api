@@ -1,6 +1,8 @@
 namespace ruttmann.vita.api.Controllers
 {
 	using System;
+  using System.Threading.Tasks;
+
   using Microsoft.AspNetCore.Hosting;
   using Microsoft.AspNetCore.Http;
   using Microsoft.AspNetCore.Mvc;
@@ -17,9 +19,12 @@ namespace ruttmann.vita.api.Controllers
 
     const String AuthCookieHeaderName = "VitaApiAuth";
 
-    public AuthenticateController(IWebHostEnvironment env)
+    private readonly ILinkedInOAuthService linkedInOAuthService;
+
+    public AuthenticateController(IWebHostEnvironment env, ILinkedInOAuthService linkedInOAuthService)
     {
-        this.IsDevelopmentMode = env.IsDevelopment();
+      this.IsDevelopmentMode = env.IsDevelopment();
+      this.linkedInOAuthService = linkedInOAuthService;
     }
 
     public bool IsDevelopmentMode { get; }
@@ -34,7 +39,7 @@ namespace ruttmann.vita.api.Controllers
     {
       var authService = this.HttpContext.RequestServices.GetRequiredService<IAuthService>();
 
-      if (!authService.IsValidCode(value.LoginCode, out var session))
+      if (!authService.IsValidCode(value.LoginCode, value.LoginCode, out var session))
       {
         this.Response.StatusCode = 401;
         return new CodeCheckReply();
@@ -42,7 +47,50 @@ namespace ruttmann.vita.api.Controllers
 
       var allowHacks = this.IsDevelopmentMode && value.LoginCode.StartsWith("x");
       
-      var cookieOptions = new CookieOptions() 
+      this.BuildAuthSuccessResponse(allowHacks, session);
+      this.Response.StatusCode = 200;
+      return new CodeCheckReply {
+          CustomAnimation = session.CustomAnimation
+        };
+    }
+
+    /// <summary>
+    /// post login information
+    /// </summary>
+    /// <param name="value">the value</param>
+    [HttpPost("oauth")]
+		[Produces("application/json")]
+    async public Task<CodeCheckReply> PostOauth([FromBody]OauthLoginRequest value)
+    {
+      var accessToken = this.linkedInOAuthService.Authenticate(value.OAuthCode);
+      if (string.IsNullOrEmpty(await accessToken))
+      {
+        this.Response.StatusCode = 401;
+        return new CodeCheckReply();
+      }
+
+      var name = await this.linkedInOAuthService.GetLinkedInUser(accessToken.Result);
+      TrackingService.AppendLog("LinkedIn login for " + name + " from " + this.GetRemoteIp());
+
+      var authService = this.HttpContext.RequestServices.GetRequiredService<IAuthService>();
+      var loginCode = "linkedin";
+      if (!authService.IsValidCode(loginCode, name, out var session))
+      {
+        this.Response.StatusCode = 401;
+        return new CodeCheckReply();
+      }
+
+      var allowHacks = this.IsDevelopmentMode && loginCode.StartsWith("x") || true;
+      this.BuildAuthSuccessResponse(allowHacks, session);
+      return new CodeCheckReply
+      {
+        CustomAnimation = session.CustomAnimation
+      };
+    }
+
+    private void BuildAuthSuccessResponse(bool allowHacks, IAuthenticatedSession session)
+    {
+      var cookieOptions = new CookieOptions()
       {
         Secure = !allowHacks,
         Expires = DateTime.UtcNow + TimeSpan.FromHours(2),
@@ -52,9 +100,17 @@ namespace ruttmann.vita.api.Controllers
       this.Response.Cookies.Append(AuthCookieHeaderName, session.Cookie, cookieOptions);
 
       this.Response.StatusCode = 200;
-      return new CodeCheckReply {
-          CustomAnimation = session.CustomAnimation
-        };
+    }
+
+    private string GetRemoteIp()
+    {
+      var remoteIp = this.HttpContext.Connection.RemoteIpAddress.ToString();
+      if (this.HttpContext.Request.Headers.TryGetValue("X-Forwarded-For", out var proxyIp))
+      {
+        remoteIp = proxyIp[0];
+      }
+
+      return remoteIp;
     }
   }
 
@@ -66,8 +122,20 @@ namespace ruttmann.vita.api.Controllers
     public String LoginCode { get; set; }
   }
 
+  /// <summary>
+  /// this 'oauth' JSON data
+  /// </summary>
+  public class OauthLoginRequest
+  {
+    public String OAuthCode { get; set; }
+  }
+
   public class CodeCheckReply
   {
     public String CustomAnimation { get; set; }
+
+    public String FirstName { get; set; }
+
+    public String Name { get; set; }
   }
 }
